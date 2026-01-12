@@ -56,6 +56,12 @@ export default defineConfig(({ mode, command }) => {
         '^/v3/api-docs/(.*)': {
           target: baseUrl,
           changeOrigin: true
+        },
+        // [新增] 静态资源代理 (解决开发环境图片 404 问题)
+        '/profile': {
+          target: 'http://localhost:8080', // 指向你的后端地址
+          changeOrigin: true
+          // 注意：这里不需要 rewrite 去掉 /profile，因为后端就需要这个前缀
         }
       }
     },

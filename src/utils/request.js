@@ -30,6 +30,13 @@ service.interceptors.request.use(
   config => {
     // 是否需要设置 token
     const isToken = (config.headers || {}).isToken === false
+    // 跳过h5相关接口的token验证
+    if (
+      config.url.indexOf('/h5/') !== -1 ||
+      config.url.endsWith('/h5/verify')
+    ) {
+      return config
+    }
     // 是否需要防止数据重复提交
     const isRepeatSubmit = (config.headers || {}).repeatSubmit === false
     if (getToken() && !isToken) {
@@ -110,6 +117,15 @@ service.interceptors.response.use(
     ) {
       return res.data
     }
+    // 检查是否为h5相关接口
+    const isH5Api = res.config.url && res.config.url.indexOf('/h5/') !== -1
+
+    // h5相关接口跳过所有拦截器的错误处理，直接返回原始数据
+    if (isH5Api) {
+      return Promise.resolve(res.data)
+    }
+
+    // 非h5接口继续正常的拦截器处理
     if (code === 401) {
       if (!isRelogin.show) {
         isRelogin.show = true
