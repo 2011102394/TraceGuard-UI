@@ -57,6 +57,12 @@ export const constantRoutes = [
     component: () => import('@/views/error/401'),
     hidden: true
   },
+  // [新增] H5 溯源验证页面
+  {
+    path: '/verify',
+    component: () => import('@/views/h5/verify'),
+    hidden: true
+  },
   {
     path: '',
     component: Layout,
