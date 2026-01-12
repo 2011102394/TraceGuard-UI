@@ -1,5 +1,13 @@
 import request from '@/utils/request'
 
+// 获取二维码内容链接
+export function getQrCodeContent(codeId) {
+  return request({
+    url: '/feature/code/qr/' + codeId,
+    method: 'get'
+  })
+}
+
 // 获取防伪码统计数据
 export function getCodeStats(query) {
   return request({

@@ -59,7 +59,7 @@ export const constantRoutes = [
   },
   // [新增] H5 溯源验证页面
   {
-    path: '/verify',
+    path: '/h5/verify',
     component: () => import('@/views/h5/verify'),
     hidden: true
   },
