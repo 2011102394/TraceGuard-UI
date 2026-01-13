@@ -26,8 +26,14 @@
           <p class="scan-info">
             第 <b>{{ result.scanCount || 1 }}</b> 次查询
           </p>
+
           <p class="scan-time" v-if="result.firstScanTime || result.scanTime">
-            首次查询: {{ formatTime(result.firstScanTime || result.scanTime) }}
+            首次查询时间:
+            {{ formatTime(result.firstScanTime || result.scanTime) }}
+          </p>
+
+          <p class="scan-addr" v-if="!result.isFirst && result.firstScanLoc">
+            首次查询地点: {{ result.firstScanLoc }}
           </p>
         </div>
 
@@ -242,10 +248,6 @@
 </script>
 
 <style scoped lang="scss">
-  /* [布局核心] 
-  使用 Flex Column 布局，并设置 min-height: 100vh 
-  content-wrapper 设置 flex: 1 撑满剩余空间
-*/
   .h5-container {
     min-height: 100vh;
     background-color: #f8f9fa;
@@ -254,7 +256,7 @@
   }
 
   .content-wrapper {
-    flex: 1; /* 关键：让内容区域占据所有可用高度 */
+    flex: 1;
     display: flex;
     flex-direction: column;
   }
@@ -290,12 +292,11 @@
       background: linear-gradient(135deg, #ff976a, #ff4d4f);
     }
 
-    /* [修改点] 右上角 Logo 样式 - 已更新 */
     .corner-logo {
       position: absolute;
       top: 10px;
       right: 10px;
-      height: 48px; /* Logo 高度适中 */
+      height: 48px;
       width: auto;
       object-fit: contain;
       z-index: 10;
@@ -317,12 +318,29 @@
       font-size: 13px;
       opacity: 0.95;
     }
+
+    .scan-time {
+      font-size: 12px;
+      margin-top: 3px;
+      opacity: 0.9;
+    }
+    /* [新增样式] 地点文字 */
+    .scan-addr {
+      display: flex;
+      align-items: center;
+      font-size: 12px;
+      margin-top: 3px;
+      opacity: 0.9;
+      .el-icon {
+        margin-right: 3px;
+      }
+    }
+
     .shield-icon {
       z-index: 2;
     }
   }
 
-  /* 装饰波浪 */
   .wave {
     position: absolute;
     bottom: -10px;
@@ -334,7 +352,6 @@
     transform: scaleX(1.5);
   }
 
-  /* 悬浮卡片 */
   .section-card {
     background: #fff;
     border-radius: 12px;
@@ -355,7 +372,6 @@
       background: #f0f0f0;
       margin-right: 15px;
       overflow: hidden;
-      /* 确保图片撑满 */
       .full-img {
         width: 100%;
         height: 100%;
@@ -395,7 +411,6 @@
     }
   }
 
-  /* 选项卡区域 */
   .tab-section {
     background: #fff;
     margin: 0 15px;
@@ -415,7 +430,6 @@
     }
   }
 
-  /* 质检参数 */
   .quality-grid {
     display: flex;
     justify-content: space-around;
@@ -441,7 +455,6 @@
     }
   }
 
-  /* 报告下载区 */
   .report-box {
     text-align: center;
     margin-top: 25px;
@@ -492,7 +505,6 @@
     }
   }
 
-  /* 富文本 */
   .rich-text {
     font-size: 14px;
     line-height: 1.8;
@@ -516,15 +528,11 @@
     font-size: 13px;
   }
 
-  /* [修改点] 底部 Footer 
-  使用 margin-top: auto 配合父级的 flex: 1 
-  实现 Sticky Footer (内容不足时沉底，内容多时跟随在后)
-*/
   .footer-section {
     background-color: #70b62c;
     color: #ffffff;
     padding: 30px 20px;
-    margin-top: auto; /* 关键：自动填充上方空间，将 Footer 推到底部 */
+    margin-top: auto;
     text-align: left;
 
     .company-name {
