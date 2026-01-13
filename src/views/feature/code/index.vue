@@ -2,42 +2,6 @@
   <div class="app-container">
     <transition name="el-fade-in-linear">
       <div v-if="showBatchView" class="batch-view">
-        <el-row :gutter="20" class="mb20">
-          <el-col :sm="24" :lg="8">
-            <div class="stat-card-item card-blue">
-              <div class="stat-icon">
-                <el-icon><DataLine /></el-icon>
-              </div>
-              <div class="stat-info">
-                <div class="stat-text">总发行量</div>
-                <div class="stat-num">{{ statsData.totalCount }}</div>
-              </div>
-            </div>
-          </el-col>
-          <el-col :sm="24" :lg="8">
-            <div class="stat-card-item card-green">
-              <div class="stat-icon">
-                <el-icon><CircleCheckFilled /></el-icon>
-              </div>
-              <div class="stat-info">
-                <div class="stat-text">已被扫码 (活跃)</div>
-                <div class="stat-num">{{ statsData.scannedCount }}</div>
-              </div>
-            </div>
-          </el-col>
-          <el-col :sm="24" :lg="8">
-            <div class="stat-card-item card-red">
-              <div class="stat-icon">
-                <el-icon><CircleCloseFilled /></el-icon>
-              </div>
-              <div class="stat-info">
-                <div class="stat-text">已作废</div>
-                <div class="stat-num">{{ statsData.voidCount }}</div>
-              </div>
-            </div>
-          </el-col>
-        </el-row>
-
         <el-form
           :model="batchQueryParams"
           ref="batchQueryRef"
@@ -45,7 +9,7 @@
           v-show="showSearch"
           class="search-form"
         >
-          <el-form-item label="产品名称">
+          <el-form-item label="产品名称" prop="productName">
             <el-input
               v-model="batchQueryParams.productName"
               placeholder="输入产品名搜索"
@@ -53,7 +17,7 @@
               @keyup.enter="handleBatchQuery"
             />
           </el-form-item>
-          <el-form-item label="批次号">
+          <el-form-item label="批次号" prop="batchNo">
             <el-input
               v-model="batchQueryParams.batchNo"
               placeholder="输入批次号搜索"
@@ -72,11 +36,11 @@
         <el-row :gutter="10" class="mb8">
           <el-col :span="1.5">
             <el-button
-              type="primary"
+              type="success"
               plain
-              icon="Search"
-              @click="handleGlobalSearch"
-              >全局码查询</el-button
+              icon="Plus"
+              @click="handleOpenGenerate"
+              >生成防伪码</el-button
             >
           </el-col>
           <right-toolbar
@@ -92,24 +56,33 @@
           stripe
           highlight-current-row
         >
-          <el-table-column label="生产批次号" prop="batchNo" min-width="160">
+          <el-table-column
+            type="index"
+            label="序号"
+            width="60"
+            align="center"
+          />
+
+          <el-table-column
+            label="所属产品"
+            prop="productName"
+            min-width="200"
+            :show-overflow-tooltip="true"
+          />
+
+          <el-table-column label="生产批次号" prop="batchNo" min-width="180">
             <template #default="scope">
               <span class="link-type" @click="enterBatchDetail(scope.row)">{{
                 scope.row.batchNo
               }}</span>
             </template>
           </el-table-column>
-          <el-table-column
-            label="所属产品"
-            prop="productName"
-            min-width="150"
-            :show-overflow-tooltip="true"
-          />
+
           <el-table-column
             label="防伪码数量"
             prop="codeCount"
             align="center"
-            width="120"
+            width="110"
           >
             <template #default="scope"
               ><el-tag effect="plain">{{
@@ -117,20 +90,22 @@
               }}</el-tag></template
             >
           </el-table-column>
+
           <el-table-column
             label="生成时间"
             prop="createTime"
             align="center"
-            width="180"
+            width="170"
           >
             <template #default="scope">{{
               parseTime(scope.row.createTime)
             }}</template>
           </el-table-column>
+
           <el-table-column
             label="操作"
             align="center"
-            width="200"
+            width="180"
             class-name="small-padding fixed-width"
           >
             <template #default="scope">
@@ -216,7 +191,7 @@
             <el-form-item label="码值搜索">
               <el-input
                 v-model="codeQueryParams.codeValue"
-                placeholder="输入UUID精准查询"
+                placeholder="输入完整防伪码查询"
                 clearable
                 @keyup.enter="getCodeList"
                 style="width: 240px"
@@ -232,15 +207,24 @@
 
           <el-table :data="codeList" v-loading="codeLoading" border stripe>
             <el-table-column type="selection" width="55" align="center" />
+
             <el-table-column
-              label="防伪码ID (UUID)"
+              type="index"
+              :index="getCodeRowIndex"
+              label="序号"
+              width="60"
+              align="center"
+            />
+
+            <el-table-column
+              label="防伪码"
               prop="codeValue"
-              width="320"
+              width="260"
               show-overflow-tooltip
             >
               <template #default="scope">
                 <span class="code-font">{{ scope.row.codeValue }}</span>
-                <el-tooltip content="复制UUID" placement="top">
+                <el-tooltip content="复制" placement="top">
                   <el-icon
                     class="action-icon"
                     @click="handleCopy(scope.row.codeValue)"
@@ -250,7 +234,7 @@
               </template>
             </el-table-column>
 
-            <el-table-column label="当前状态" align="center" width="100">
+            <el-table-column label="状态" align="center" width="80">
               <template #default="scope">
                 <el-tag v-if="scope.row.status === '2'" type="info"
                   >待激活</el-tag
@@ -266,7 +250,7 @@
               label="扫码次数"
               prop="scanCount"
               align="center"
-              width="100"
+              width="90"
             >
               <template #default="scope">
                 <span
@@ -277,20 +261,31 @@
                 <span v-else class="text-gray-400">0</span>
               </template>
             </el-table-column>
+
             <el-table-column
               label="首次扫码时间"
               prop="firstScanTime"
               align="center"
-              width="180"
+              width="170"
             >
               <template #default="scope">{{
                 parseTime(scope.row.firstScanTime) || '-'
               }}</template>
             </el-table-column>
+
             <el-table-column
               label="首次扫码IP"
               prop="firstScanIp"
               align="center"
+              width="140"
+              show-overflow-tooltip
+            />
+
+            <el-table-column
+              label="首次扫码地址"
+              prop="firstScanLoc"
+              align="center"
+              min-width="150"
               show-overflow-tooltip
             />
 
@@ -298,7 +293,7 @@
               label="操作"
               align="center"
               fixed="right"
-              width="180"
+              width="160"
             >
               <template #default="scope">
                 <el-button
@@ -347,54 +342,72 @@
     </transition>
 
     <el-dialog
-      title="全局防伪码查询"
-      v-model="globalSearchOpen"
-      width="500px"
+      title="批量生成防伪码"
+      v-model="openGenerate"
+      width="550px"
       append-to-body
     >
-      <div class="global-search-box">
-        <el-input
-          v-model="globalSearchCode"
-          placeholder="请输入完整的防伪码UUID"
-          clearable
-          @keyup.enter="doGlobalSearch"
-          size="large"
-        >
-          <template #prefix
-            ><el-icon><Search /></el-icon
-          ></template>
-          <template #append
-            ><el-button @click="doGlobalSearch">查询</el-button></template
+      <el-form
+        ref="genFormRef"
+        :model="genForm"
+        :rules="genRules"
+        label-width="100px"
+      >
+        <el-form-item label="选择产品" prop="productId">
+          <el-select
+            v-model="genForm.productId"
+            placeholder="请选择所属产品"
+            filterable
+            style="width: 100%"
           >
-        </el-input>
-      </div>
-      <div v-if="globalSearchResult" class="result-card mt20">
-        <el-descriptions :column="1" border>
-          <el-descriptions-item label="所属批次">{{
-            globalSearchResult.batchNo
-          }}</el-descriptions-item>
-          <el-descriptions-item label="所属产品">{{
-            globalSearchResult.productName
-          }}</el-descriptions-item>
-          <el-descriptions-item label="当前状态">
-            <el-tag v-if="globalSearchResult.status === '2'" type="info"
-              >待激活</el-tag
+            <el-option
+              v-for="item in productOptions"
+              :key="item.productId"
+              :label="item.productName"
+              :value="item.productId"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="批次号" prop="batchNo">
+          <el-input
+            v-model="genForm.batchNo"
+            placeholder="请输入生产批次号"
+            maxlength="15"
+            show-word-limit
+          />
+          <div class="text-warning text-sm mt-1" style="line-height: 1.4">
+            <el-icon style="vertical-align: middle; margin-right: 4px"
+              ><InfoFilled
+            /></el-icon>
+            防伪码总长固定为 24 位 (格式: 批次号_补零流水号)<br />
+            <span style="padding-left: 20px; color: #999"
+              >示例: 批次号为 "A01" -> A01_00000000000000000001</span
             >
-            <el-tag v-else-if="globalSearchResult.status === '0'" type="success"
-              >已激活</el-tag
-            >
-            <el-tag v-else type="danger">已作废</el-tag>
-          </el-descriptions-item>
-          <el-descriptions-item label="扫码次数">{{
-            globalSearchResult.scanCount
-          }}</el-descriptions-item>
-        </el-descriptions>
-        <div class="mt20 text-center">
-          <el-button type="primary" plain @click="jumpToBatchFromGlobal"
-            >跳转至该批次详情</el-button
+          </div>
+        </el-form-item>
+        <el-form-item label="生成数量" prop="count">
+          <el-input-number
+            v-model="genForm.count"
+            :min="1"
+            :max="200000"
+            :step="100"
+            step-strictly
+            style="width: 100%"
+          />
+          <div class="text-gray-400 text-sm mt-1">单次建议不超过20万条</div>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button
+            type="primary"
+            @click="submitGenerate"
+            :loading="genLoading"
+            >确 定</el-button
           >
+          <el-button @click="openGenerate = false">取 消</el-button>
         </div>
-      </div>
+      </template>
     </el-dialog>
 
     <el-dialog
@@ -430,12 +443,13 @@
 <script setup name="TraceCode">
   import {
     listCode,
-    getCodeStats,
     updateCode,
     delCode,
     listBatch,
+    generateCode,
     getQrCodeContent
   } from '@/api/feature/code'
+  import { listProduct } from '@/api/feature/product'
   import useClipboard from 'vue-clipboard3'
   import QrcodeVue from 'qrcode.vue'
 
@@ -449,11 +463,25 @@
   const codeLoading = ref(false)
 
   // ================== 数据对象 ==================
-  const statsData = ref({ totalCount: 0, scannedCount: 0, voidCount: 0 })
   const batchList = ref([])
   const codeList = ref([])
   const codeTotal = ref(0)
   const currentBatch = ref({})
+
+  // ================== 生码相关 ==================
+  const openGenerate = ref(false)
+  const genLoading = ref(false)
+  const productOptions = ref([])
+  const genForm = ref({
+    productId: null,
+    batchNo: '',
+    count: 1000
+  })
+  const genRules = ref({
+    productId: [{ required: true, message: '请选择产品', trigger: 'change' }],
+    batchNo: [{ required: true, message: '请输入批次号', trigger: 'blur' }],
+    count: [{ required: true, message: '请输入数量', trigger: 'blur' }]
+  })
 
   // ================== 二维码相关 ==================
   const qrOpen = ref(false)
@@ -472,20 +500,10 @@
     scanState: null
   })
 
-  const globalSearchOpen = ref(false)
-  const globalSearchCode = ref('')
-  const globalSearchResult = ref(null)
-
   function init() {
-    getStats()
     getBatchList()
   }
 
-  function getStats() {
-    getCodeStats().then(res => {
-      if (res.data) statsData.value = res.data
-    })
-  }
   function getBatchList() {
     batchLoading.value = true
     listBatch(batchQueryParams.value)
@@ -520,7 +538,6 @@
     showBatchView.value = true
     currentBatch.value = {}
     getBatchList()
-    getStats()
   }
 
   function getCodeList() {
@@ -536,6 +553,15 @@
     codeQueryParams.value.status = null
     codeQueryParams.value.scanState = null
     getCodeList()
+  }
+
+  // [新增] 计算防伪码列表的全局连续序号
+  function getCodeRowIndex(index) {
+    return (
+      (codeQueryParams.value.pageNum - 1) * codeQueryParams.value.pageSize +
+      index +
+      1
+    )
   }
 
   function handleBatchAction(type) {
@@ -578,36 +604,41 @@
     )
   }
 
-  function handleGlobalSearch() {
-    globalSearchOpen.value = true
-    globalSearchResult.value = null
-    globalSearchCode.value = ''
-  }
-  function doGlobalSearch() {
-    if (!globalSearchCode.value) return
-    listCode({
-      codeValue: globalSearchCode.value,
-      pageNum: 1,
-      pageSize: 1
-    }).then(res => {
-      if (res.rows && res.rows.length > 0) {
-        globalSearchResult.value = res.rows[0]
-      } else {
-        proxy.$modal.msgError('未找到该防伪码')
-        globalSearchResult.value = null
-      }
-    })
-  }
-  function jumpToBatchFromGlobal() {
-    const target = globalSearchResult.value
-    globalSearchOpen.value = false
-    enterBatchDetail({
-      batchNo: target.batchNo,
-      productName: target.productName,
-      productId: target.productId
+  // ================= 生码功能逻辑 =================
+  function handleOpenGenerate() {
+    openGenerate.value = true
+    // 重置表单
+    genForm.value = {
+      productId: null,
+      batchNo: '',
+      count: 1000
+    }
+    // 获取产品列表
+    listProduct().then(res => {
+      productOptions.value = res.rows
     })
   }
 
+  function submitGenerate() {
+    proxy.$refs['genFormRef'].validate(valid => {
+      if (valid) {
+        genLoading.value = true
+        generateCode(genForm.value)
+          .then(res => {
+            proxy.$modal.msgSuccess(res.msg || '生码任务提交成功')
+            openGenerate.value = false
+            genLoading.value = false
+            // 刷新列表
+            getBatchList()
+          })
+          .catch(() => {
+            genLoading.value = false
+          })
+      }
+    })
+  }
+
+  // ================= 复制与预览逻辑 =================
   async function handleCopy(text) {
     await toClipboard(text)
     proxy.$modal.msgSuccess('已复制')
@@ -645,53 +676,6 @@
 </script>
 
 <style scoped lang="scss">
-  .stat-card-item {
-    display: flex;
-    align-items: center;
-    padding: 20px;
-    border-radius: 8px;
-    color: #fff;
-    cursor: pointer;
-    transition: all 0.3s;
-    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
-    &:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.2);
-    }
-    .stat-icon {
-      width: 48px;
-      height: 48px;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.2);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 24px;
-      margin-right: 15px;
-    }
-    .stat-info {
-      flex: 1;
-      .stat-text {
-        font-size: 14px;
-        opacity: 0.9;
-        margin-bottom: 4px;
-      }
-      .stat-num {
-        font-size: 24px;
-        font-weight: bold;
-      }
-    }
-  }
-  .card-blue {
-    background: linear-gradient(135deg, #36d1dc 0%, #5b86e5 100%);
-  }
-  .card-green {
-    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-  }
-  .card-red {
-    background: linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%);
-  }
-
   .link-type {
     color: #409eff;
     cursor: pointer;
@@ -757,6 +741,9 @@
   }
   .text-gray-500 {
     color: #909399;
+  }
+  .text-warning {
+    color: #e6a23c;
   }
   .text-sm {
     font-size: 12px;

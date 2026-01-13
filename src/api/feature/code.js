@@ -37,7 +37,7 @@ export function getCode(codeId) {
 // 修改防伪码 (用于作废、激活)
 export function updateCode(data) {
   return request({
-    url: '/feature/code', // 这里的后端接口是 TgTraceCodeController.edit -> PUT /feature/code
+    url: '/feature/code',
     method: 'put',
     data: data
   })
@@ -52,11 +52,12 @@ export function delCode(codeId) {
 }
 
 // 查询某产品的生码批次列表 (聚合统计)
-export function listBatch(productId) {
+// [修复] 参数名改为 query，直接作为 params 传递，不再包装在 { productId } 中
+export function listBatch(query) {
   return request({
     url: '/feature/code/batch/list',
     method: 'get',
-    params: { productId }
+    params: query
   })
 }
 
@@ -69,8 +70,7 @@ export function generateCode(data) {
   })
 }
 
-// 导出指定批次的防伪码 (通常用于下载)
-// 注意：通用下载方法 proxy.download 会自动处理，这里仅做记录，实际调用见组件内
+// 导出指定批次的防伪码
 export function exportBatch(data) {
   return request({
     url: '/feature/code/export',
