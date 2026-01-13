@@ -337,7 +337,7 @@
               map: 'china',
               roam: true,
               zoom: 1.2,
-              layoutCenter: ['50%', '55%'],
+              layoutCenter: ['50%', '57%'],
               layoutSize: '95%',
 
               labelLayout: {
@@ -418,7 +418,7 @@
 
 <style scoped lang="scss">
   .home {
-    padding: 10px;
+    padding: 24px;
     background-color: #f6f8f9;
     min-height: calc(100vh - 84px);
 
