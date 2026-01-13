@@ -5,7 +5,15 @@
       <p>正品溯源中...</p>
     </div>
 
-    <div v-else class="content-wrapper">
+    <div v-else-if="result.product" class="content-wrapper">
+      <div class="brand-header" v-if="result.product.companyLogo">
+        <img
+          :src="getFullUrl(result.product.companyLogo)"
+          alt="Brand Logo"
+          class="brand-logo"
+        />
+      </div>
+
       <div class="auth-header" :class="authStatusClass">
         <div class="shield-icon">
           <el-icon v-if="result.authStatus === 'SUCCESS'" :size="50"
@@ -18,7 +26,6 @@
           <p class="scan-info">
             第 <b>{{ result.scanCount || 1 }}</b> 次查询
           </p>
-
           <p class="scan-time" v-if="result.firstScanTime || result.scanTime">
             首次查询: {{ formatTime(result.firstScanTime || result.scanTime) }}
           </p>
@@ -26,7 +33,7 @@
         <div class="wave"></div>
       </div>
 
-      <div class="section-card product-basic" v-if="result.product">
+      <div class="section-card product-basic">
         <div class="prod-img">
           <img :src="getFullUrl(result.product.productImage)" alt="产品图片" />
         </div>
@@ -59,8 +66,7 @@
                 class="report-box"
                 v-if="result.product.reportImage || result.product.reportFile"
               >
-                <div class="section-title">2025年官方检测报告</div>
-
+                <div class="section-title">官方检测报告</div>
                 <el-image
                   v-if="result.product.reportImage"
                   :src="getFullUrl(result.product.reportImage)"
@@ -130,6 +136,11 @@
         </div>
       </div>
     </div>
+
+    <div v-else class="loading-box">
+      <el-icon :size="40" color="#f56c6c"><CircleCloseFilled /></el-icon>
+      <p>未查询到产品信息</p>
+    </div>
   </div>
 </template>
 
@@ -140,11 +151,11 @@
 
   const route = useRoute()
   const loading = ref(true)
+  // result 初始化为空对象
   const result = ref({})
   const activeTab = ref('quality')
   const qualityParams = ref([])
 
-  // 获取环境变量中的基准路径
   const baseUrl = import.meta.env.VITE_APP_BASE_API
 
   const authStatusClass = computed(() => {
@@ -158,8 +169,7 @@
   })
 
   onMounted(() => {
-    // 修复Bug 3: 接收参数从 c 改为 code
-    const codeVal = route.query.c
+    const codeVal = route.query.code
     if (codeVal) doVerify(codeVal)
     else loading.value = false
   })
@@ -168,7 +178,6 @@
     request({
       url: '/h5/verify',
       method: 'get',
-      // 修复Bug 3: 请求参数名 c 改为 code
       params: { code: codeVal }
     })
       .then(res => {
@@ -177,6 +186,7 @@
           result.value = res.data
 
           try {
+            // 安全解析 JSON
             if (res.data.product && res.data.product.qualityJson) {
               qualityParams.value = JSON.parse(res.data.product.qualityJson)
             }
@@ -188,37 +198,25 @@
       .catch(() => (loading.value = false))
   }
 
-  /**
-   * 修复Bug 2: 时间格式化函数
-   * 将 ISO 时间或时间戳格式化为 yyyy-MM-dd HH:mm:ss
-   */
   function formatTime(timeStr) {
     if (!timeStr) return ''
     const date = new Date(timeStr)
-    if (isNaN(date.getTime())) return timeStr // 如果解析失败，返回原字符串
-
+    if (isNaN(date.getTime())) return timeStr
     const y = date.getFullYear()
     const m = (date.getMonth() + 1).toString().padStart(2, '0')
     const d = date.getDate().toString().padStart(2, '0')
     const h = date.getHours().toString().padStart(2, '0')
     const min = date.getMinutes().toString().padStart(2, '0')
     const s = date.getSeconds().toString().padStart(2, '0')
-
     return `${y}-${m}-${d} ${h}:${min}:${s}`
   }
 
-  /**
-   * 图片路径补全
-   */
   function getFullUrl(url) {
     if (!url) return ''
     if (url.startsWith('http') || url.startsWith('https')) return url
     return baseUrl + url
   }
 
-  /**
-   * 富文本路径处理
-   */
   function formatRichText(html) {
     if (!html) return ''
     return html.replace(/src="\/profile\//g, `src="${baseUrl}/profile/`)
@@ -250,6 +248,19 @@
     flex: 1;
     display: flex;
     flex-direction: column;
+  }
+
+  /* 品牌顶部栏样式 */
+  .brand-header {
+    background: #fff;
+    padding: 10px 0;
+    text-align: center;
+    border-bottom: 1px solid #f5f5f5;
+    .brand-logo {
+      height: 40px;
+      width: auto;
+      object-fit: contain;
+    }
   }
 
   .auth-header {
