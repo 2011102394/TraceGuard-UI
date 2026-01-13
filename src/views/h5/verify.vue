@@ -6,21 +6,21 @@
     </div>
 
     <div v-else-if="result.product" class="content-wrapper">
-      <div class="brand-header" v-if="result.product.companyLogo">
+      <div class="auth-header" :class="authStatusClass">
         <img
+          v-if="result.product.companyLogo"
           :src="getFullUrl(result.product.companyLogo)"
           alt="Brand Logo"
-          class="brand-logo"
+          class="corner-logo"
         />
-      </div>
 
-      <div class="auth-header" :class="authStatusClass">
         <div class="shield-icon">
           <el-icon v-if="result.authStatus === 'SUCCESS'" :size="50"
             ><CircleCheckFilled
           /></el-icon>
           <el-icon v-else :size="50"><WarningFilled /></el-icon>
         </div>
+
         <div class="auth-text">
           <h2>{{ statusTitle }}</h2>
           <p class="scan-info">
@@ -30,13 +30,26 @@
             首次查询: {{ formatTime(result.firstScanTime || result.scanTime) }}
           </p>
         </div>
+
         <div class="wave"></div>
       </div>
 
       <div class="section-card product-basic">
         <div class="prod-img">
-          <img :src="getFullUrl(result.product.productImage)" alt="产品图片" />
+          <el-image
+            :src="getFullUrl(result.product.productImage)"
+            :preview-src-list="[getFullUrl(result.product.productImage)]"
+            fit="cover"
+            class="full-img"
+          >
+            <template #error>
+              <div class="image-slot">
+                <el-icon><Picture /></el-icon>
+              </div>
+            </template>
+          </el-image>
         </div>
+
         <div class="prod-info">
           <h3>{{ result.product.productName }}</h3>
           <p>批次号：{{ result.batchNo }}</p>
@@ -138,8 +151,11 @@
     </div>
 
     <div v-else class="loading-box">
-      <el-icon :size="40" color="#f56c6c"><CircleCloseFilled /></el-icon>
-      <p>未查询到产品信息</p>
+      <el-icon :size="50" color="#f56c6c"><CircleCloseFilled /></el-icon>
+      <p style="margin-top: 20px; color: #666">未查询到相关产品信息</p>
+      <p style="font-size: 12px; color: #999">
+        请确认二维码是否正确或联系管理员
+      </p>
     </div>
   </div>
 </template>
@@ -151,7 +167,6 @@
 
   const route = useRoute()
   const loading = ref(true)
-  // result 初始化为空对象
   const result = ref({})
   const activeTab = ref('quality')
   const qualityParams = ref([])
@@ -170,8 +185,11 @@
 
   onMounted(() => {
     const codeVal = route.query.code
-    if (codeVal) doVerify(codeVal)
-    else loading.value = false
+    if (codeVal) {
+      doVerify(codeVal)
+    } else {
+      loading.value = false
+    }
   })
 
   function doVerify(codeVal) {
@@ -184,18 +202,18 @@
         loading.value = false
         if (res.code === 200) {
           result.value = res.data
-
           try {
-            // 安全解析 JSON
             if (res.data.product && res.data.product.qualityJson) {
               qualityParams.value = JSON.parse(res.data.product.qualityJson)
             }
           } catch (e) {
-            console.error('JSON Error', e)
+            console.error('JSON Parse Error', e)
           }
         }
       })
-      .catch(() => (loading.value = false))
+      .catch(() => {
+        loading.value = false
+      })
   }
 
   function formatTime(timeStr) {
@@ -224,9 +242,19 @@
 </script>
 
 <style scoped lang="scss">
+  /* [布局核心] 
+  使用 Flex Column 布局，并设置 min-height: 100vh 
+  content-wrapper 设置 flex: 1 撑满剩余空间
+*/
   .h5-container {
     min-height: 100vh;
     background-color: #f8f9fa;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .content-wrapper {
+    flex: 1; /* 关键：让内容区域占据所有可用高度 */
     display: flex;
     flex-direction: column;
   }
@@ -244,28 +272,10 @@
     }
   }
 
-  .content-wrapper {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-  }
-
-  /* 品牌顶部栏样式 */
-  .brand-header {
-    background: #fff;
-    padding: 10px 0;
-    text-align: center;
-    border-bottom: 1px solid #f5f5f5;
-    .brand-logo {
-      height: 40px;
-      width: auto;
-      object-fit: contain;
-    }
-  }
-
+  /* 顶部真伪核验卡片 */
   .auth-header {
     position: relative;
-    padding: 30px 20px 60px;
+    padding: 40px 25px 70px;
     color: #fff;
     border-bottom-left-radius: 30px;
     border-bottom-right-radius: 30px;
@@ -278,6 +288,19 @@
     }
     &.bg-warning {
       background: linear-gradient(135deg, #ff976a, #ff4d4f);
+    }
+
+    /* [修改点] 右上角 Logo 样式 - 已更新 */
+    .corner-logo {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      height: 48px; /* Logo 高度适中 */
+      width: auto;
+      object-fit: contain;
+      z-index: 10;
+      opacity: 0.95;
+      border-radius: 4px;
     }
 
     .auth-text {
@@ -299,6 +322,7 @@
     }
   }
 
+  /* 装饰波浪 */
   .wave {
     position: absolute;
     bottom: -10px;
@@ -310,6 +334,7 @@
     transform: scaleX(1.5);
   }
 
+  /* 悬浮卡片 */
   .section-card {
     background: #fff;
     border-radius: 12px;
@@ -330,10 +355,18 @@
       background: #f0f0f0;
       margin-right: 15px;
       overflow: hidden;
-      img {
+      /* 确保图片撑满 */
+      .full-img {
         width: 100%;
         height: 100%;
-        object-fit: cover;
+      }
+      .image-slot {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100%;
+        color: #999;
+        font-size: 20px;
       }
     }
     .prod-info {
@@ -362,12 +395,14 @@
     }
   }
 
+  /* 选项卡区域 */
   .tab-section {
     background: #fff;
     margin: 0 15px;
     border-radius: 12px;
     min-height: 300px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+
     :deep(.el-tabs__header) {
       margin-bottom: 0;
     }
@@ -380,6 +415,7 @@
     }
   }
 
+  /* 质检参数 */
   .quality-grid {
     display: flex;
     justify-content: space-around;
@@ -388,6 +424,7 @@
     padding: 15px 0;
     border-radius: 8px;
     border: 1px solid #eef5fe;
+
     .q-item {
       text-align: center;
       .q-val {
@@ -404,6 +441,7 @@
     }
   }
 
+  /* 报告下载区 */
   .report-box {
     text-align: center;
     margin-top: 25px;
@@ -454,6 +492,7 @@
     }
   }
 
+  /* 富文本 */
   .rich-text {
     font-size: 14px;
     line-height: 1.8;
@@ -477,11 +516,15 @@
     font-size: 13px;
   }
 
+  /* [修改点] 底部 Footer 
+  使用 margin-top: auto 配合父级的 flex: 1 
+  实现 Sticky Footer (内容不足时沉底，内容多时跟随在后)
+*/
   .footer-section {
     background-color: #70b62c;
     color: #ffffff;
     padding: 30px 20px;
-    margin-top: 30px;
+    margin-top: auto; /* 关键：自动填充上方空间，将 Footer 推到底部 */
     text-align: left;
 
     .company-name {
