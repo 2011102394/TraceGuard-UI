@@ -62,14 +62,12 @@
             width="60"
             align="center"
           />
-
           <el-table-column
             label="所属产品"
             prop="productName"
             min-width="200"
             :show-overflow-tooltip="true"
           />
-
           <el-table-column label="生产批次号" prop="batchNo" min-width="180">
             <template #default="scope">
               <span class="link-type" @click="enterBatchDetail(scope.row)">{{
@@ -77,7 +75,6 @@
               }}</span>
             </template>
           </el-table-column>
-
           <el-table-column
             label="防伪码数量"
             prop="codeCount"
@@ -90,7 +87,6 @@
               }}</el-tag></template
             >
           </el-table-column>
-
           <el-table-column
             label="生成时间"
             prop="createTime"
@@ -105,7 +101,7 @@
           <el-table-column
             label="操作"
             align="center"
-            width="180"
+            width="220"
             class-name="small-padding fixed-width"
           >
             <template #default="scope">
@@ -119,7 +115,13 @@
                 link
                 type="warning"
                 @click="handleExportBatch(scope.row)"
-                >导出数据</el-button
+                >导出</el-button
+              >
+              <el-button
+                link
+                type="danger"
+                @click="handleDeleteBatch(scope.row)"
+                >删除</el-button
               >
             </template>
           </el-table-column>
@@ -207,7 +209,6 @@
 
           <el-table :data="codeList" v-loading="codeLoading" border stripe>
             <el-table-column type="selection" width="55" align="center" />
-
             <el-table-column
               type="index"
               :index="getCodeRowIndex"
@@ -215,7 +216,6 @@
               width="60"
               align="center"
             />
-
             <el-table-column
               label="防伪码"
               prop="codeValue"
@@ -233,8 +233,7 @@
                 </el-tooltip>
               </template>
             </el-table-column>
-
-            <el-table-column label="状态" align="center" width="80">
+            <el-table-column label="状态" align="center" width="100">
               <template #default="scope">
                 <el-tag v-if="scope.row.status === '2'" type="info"
                   >待激活</el-tag
@@ -245,7 +244,6 @@
                 <el-tag v-else type="danger">已作废</el-tag>
               </template>
             </el-table-column>
-
             <el-table-column
               label="扫码次数"
               prop="scanCount"
@@ -261,7 +259,6 @@
                 <span v-else class="text-gray-400">0</span>
               </template>
             </el-table-column>
-
             <el-table-column
               label="首次扫码时间"
               prop="firstScanTime"
@@ -272,7 +269,6 @@
                 parseTime(scope.row.firstScanTime) || '-'
               }}</template>
             </el-table-column>
-
             <el-table-column
               label="首次扫码IP"
               prop="firstScanIp"
@@ -280,7 +276,6 @@
               width="140"
               show-overflow-tooltip
             />
-
             <el-table-column
               label="首次扫码地址"
               prop="firstScanLoc"
@@ -288,12 +283,11 @@
               min-width="150"
               show-overflow-tooltip
             />
-
             <el-table-column
               label="操作"
               align="center"
               fixed="right"
-              width="160"
+              width="180"
             >
               <template #default="scope">
                 <el-button
@@ -302,7 +296,6 @@
                   @click="handlePreviewQr(scope.row)"
                   >预览</el-button
                 >
-
                 <el-button
                   v-if="scope.row.status === '2'"
                   link
@@ -310,7 +303,6 @@
                   @click="handleSingleStatus(scope.row, '0')"
                   >激活</el-button
                 >
-
                 <el-button
                   v-if="scope.row.status === '0'"
                   link
@@ -318,7 +310,6 @@
                   @click="handleSingleStatus(scope.row, '1')"
                   >作废</el-button
                 >
-
                 <el-button
                   v-if="scope.row.status === '1'"
                   link
@@ -444,6 +435,8 @@
   import {
     listCode,
     updateCode,
+    updateBatchStatus,
+    delBatch, // 新增：引入删除批次API
     delCode,
     listBatch,
     generateCode,
@@ -555,7 +548,7 @@
     getCodeList()
   }
 
-  // [新增] 计算防伪码列表的全局连续序号
+  // 计算防伪码列表的全局连续序号
   function getCodeRowIndex(index) {
     return (
       (codeQueryParams.value.pageNum - 1) * codeQueryParams.value.pageSize +
@@ -567,19 +560,45 @@
   function handleBatchAction(type) {
     const batchNo = currentBatch.value.batchNo
     let confirmText = ''
-    if (type === 'void') confirmText = `确认将批次 [${batchNo}] 所有码作废吗？`
-    else if (type === 'active')
-      confirmText = `确认将批次 [${batchNo}] 所有码激活吗？`
+    let targetStatus = ''
 
-    proxy.$modal.confirm(confirmText).then(() => {
-      proxy.$modal.msgWarning('请确保后端已实现 updateBatchStatus 接口')
-    })
+    if (type === 'void') {
+      confirmText = `确认将批次 [${batchNo}] 所有码作废吗？此操作将导致用户扫码显示作废！`
+      targetStatus = '1'
+    } else if (type === 'active') {
+      confirmText = `确认将批次 [${batchNo}] 所有码激活吗？`
+      targetStatus = '0'
+    }
+
+    proxy.$modal
+      .confirm(confirmText)
+      .then(() => {
+        return updateBatchStatus({ batchNo: batchNo, status: targetStatus })
+      })
+      .then(() => {
+        proxy.$modal.msgSuccess('操作成功')
+        getCodeList()
+      })
   }
 
-  /** * 单个码状态变更
-   * 2 -> 0 (激活)
-   * 0 -> 1 (作废)
-   */
+  // 新增：批量删除逻辑
+  function handleDeleteBatch(row) {
+    const batchNo = row.batchNo
+    const count = row.codeCount || 0
+    const confirmText = `警告：确认要删除批次 [${batchNo}] 吗？\n该操作将永久删除该批次下所有的 ${count} 个防伪码，且不可恢复！`
+
+    proxy.$modal
+      .confirm(confirmText)
+      .then(() => {
+        return delBatch(batchNo)
+      })
+      .then(() => {
+        proxy.$modal.msgSuccess('删除成功')
+        getBatchList() // 刷新批次列表
+      })
+      .catch(() => {})
+  }
+
   function handleSingleStatus(row, targetStatus) {
     let actionText = ''
     if (targetStatus === '0') actionText = '激活'
@@ -600,20 +619,17 @@
     proxy.download(
       'feature/code/export',
       { productId: row.productId, batchNo: row.batchNo },
-      `Batch_${row.batchNo}.xlsx`
+      `防伪码_${row.batchNo}.xlsx`
     )
   }
 
-  // ================= 生码功能逻辑 =================
   function handleOpenGenerate() {
     openGenerate.value = true
-    // 重置表单
     genForm.value = {
       productId: null,
       batchNo: '',
       count: 1000
     }
-    // 获取产品列表
     listProduct().then(res => {
       productOptions.value = res.rows
     })
@@ -622,14 +638,20 @@
   function submitGenerate() {
     proxy.$refs['genFormRef'].validate(valid => {
       if (valid) {
-        genLoading.value = true
+        genLoading.value = true // 开启 loading
         generateCode(genForm.value)
           .then(res => {
-            proxy.$modal.msgSuccess(res.msg || '生码任务提交成功')
+            // 后端现在会立即返回成功
+            proxy.$modal.msgSuccess(res.msg) // 显示"任务已提交..."
             openGenerate.value = false
             genLoading.value = false
-            // 刷新列表
             getBatchList()
+            // 可以加一个提示让用户知道会有延迟
+            proxy.$modal.notify(
+              '提示',
+              '若生成数量巨大，请过几分钟后刷新列表查看统计数据',
+              'info'
+            )
           })
           .catch(() => {
             genLoading.value = false
@@ -638,7 +660,6 @@
     })
   }
 
-  // ================= 复制与预览逻辑 =================
   async function handleCopy(text) {
     await toClipboard(text)
     proxy.$modal.msgSuccess('已复制')

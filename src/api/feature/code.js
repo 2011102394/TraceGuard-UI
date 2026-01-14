@@ -79,3 +79,19 @@ export function exportBatch(data) {
     responseType: 'blob'
   })
 }
+// 批量修改防伪码状态 (新增)
+export function updateBatchStatus(data) {
+  return request({
+    url: '/feature/code/batch/status',
+    method: 'put',
+    data: data
+  })
+}
+
+// 删除指定批次
+export function delBatch(batchNo) {
+  return request({
+    url: '/feature/code/batch/' + batchNo,
+    method: 'delete'
+  })
+}
