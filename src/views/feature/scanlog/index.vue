@@ -15,14 +15,6 @@
           @keyup.enter="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="扫描IP" prop="scanIp">
-        <el-input
-          v-model="queryParams.scanIp"
-          placeholder="请输入扫描IP"
-          clearable
-          @keyup.enter="handleQuery"
-        />
-      </el-form-item>
       <el-form-item label="状态" prop="status">
         <el-select
           v-model="queryParams.status"
@@ -85,12 +77,12 @@
       stripe
     >
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="日志ID" align="center" prop="logId" width="80" />
+      <el-table-column label="序号" align="center" prop="index" width="80" />
       <el-table-column
         label="防伪码"
         align="center"
         prop="codeValue"
-        min-width="260"
+        min-width="160"
         :show-overflow-tooltip="true"
       >
         <template #default="scope">
@@ -111,10 +103,11 @@
         :show-overflow-tooltip="true"
       />
       <el-table-column
-        label="浏览器信息"
+        label="设备信息"
         align="center"
         prop="browserInfo"
         :show-overflow-tooltip="true"
+        min-width="160"
       />
       <el-table-column label="状态" align="center" prop="status" width="100">
         <template #default="scope">
@@ -126,6 +119,7 @@
         label="备注"
         align="center"
         prop="remark"
+        min-width="160"
         :show-overflow-tooltip="true"
       />
       <el-table-column
@@ -183,7 +177,13 @@
     loading.value = true
     listScanlog(proxy.addDateRange(queryParams.value, dateRange.value)).then(
       response => {
-        scanlogList.value = response.rows
+        scanlogList.value = response.rows.map((item, index) => ({
+          ...item,
+          index:
+            queryParams.value.pageSize * (queryParams.value.pageNum - 1) +
+            index +
+            1
+        }))
         total.value = response.total
         loading.value = false
       }

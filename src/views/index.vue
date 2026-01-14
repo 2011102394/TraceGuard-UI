@@ -291,7 +291,34 @@
     }
   }
 
-  // [修改点] 地图样式优化：解决颜色冲突
+  // [新增函数] 标准化省份名称：将 "陕西" 转为 "陕西省" 等
+  function normalizeProvinceName(name) {
+    if (!name) return name
+    // 如果已经包含后缀，直接返回
+    if (
+      name.endsWith('省') ||
+      name.endsWith('市') ||
+      name.endsWith('自治区') ||
+      name.endsWith('特别行政区')
+    ) {
+      return name
+    }
+    // 特殊处理直辖市和自治区
+    if (['北京', '天津', '上海', '重庆'].includes(name)) {
+      return name + '市'
+    }
+    if (name === '内蒙古') return '内蒙古自治区'
+    if (name === '广西') return '广西壮族自治区'
+    if (name === '西藏') return '西藏自治区'
+    if (name === '宁夏') return '宁夏回族自治区'
+    if (name === '新疆') return '新疆维吾尔自治区'
+    if (name === '香港') return '香港特别行政区'
+    if (name === '澳门') return '澳门特别行政区'
+    // 其他默认为省
+    return name + '省'
+  }
+
+  // [修改点] 地图样式优化：解决颜色冲突 + 数据名称匹配
   function initMap() {
     if (!mapChartRef.value) return
     mapLoading.value = true
@@ -306,6 +333,13 @@
         echarts.registerMap('china', response.data)
 
         mapChart = echarts.init(mapChartRef.value)
+
+        // [核心修改 3] 处理数据，将简称转换为全称
+        const processedData = (data.value.provinceStat || []).map(item => ({
+          name: normalizeProvinceName(item.name),
+          value: item.value
+        }))
+
         mapChart.setOption({
           tooltip: {
             trigger: 'item',
@@ -318,13 +352,11 @@
           },
           visualMap: {
             min: 0,
-            max: calculateMax(data.value.provinceStat),
+            max: calculateMax(processedData), // 使用处理后的数据计算最大值
             left: '20',
             bottom: '20',
             text: ['高', '低'],
             calculable: true,
-            // [核心修改 1] 将地图数据底色改为 "青色/湖蓝色" 渐变
-            // 这样与 悬浮时的 "品牌蓝" 形成色相差异，不会混淆
             inRange: {
               color: ['#e0f7fa', '#80deea', '#0097a7']
             },
@@ -354,14 +386,11 @@
                 textShadowOffsetY: 0
               },
 
-              // [核心修改 2] 悬浮样式：半透明品牌蓝
               emphasis: {
                 label: {
-                  show: false // 悬浮时不显示文字，保持清爽
+                  show: false
                 },
                 itemStyle: {
-                  // 悬浮高亮色：使用 Element Plus 品牌蓝，带 40% 不透明度
-                  // 它覆盖在 "青色" 地图上时，会呈现出一种漂亮的深蓝紫色调，区分度很高
                   areaColor: 'rgba(64, 158, 255, 0.4)',
                   shadowBlur: 10,
                   shadowColor: 'rgba(0,0,0,0.1)'
@@ -375,7 +404,8 @@
                 shadowColor: 'rgba(0, 0, 0, 0.05)',
                 shadowBlur: 4
               },
-              data: data.value.provinceStat
+              // [核心修改 4] 使用处理后的全名数据
+              data: processedData
             }
           ]
         })

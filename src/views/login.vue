@@ -2,7 +2,7 @@
   <div class="login-container">
     <div class="login-left">
       <div class="login-left-content">
-        <div class="brand-title">TraceGuard</div>
+        <div class="brand-title">齐峰花粉</div>
         <div class="brand-subtitle">产品标签溯源平台</div>
         <div class="brand-desc">
           为每一件商品赋予唯一的数字身份<br />
@@ -196,9 +196,7 @@
 
 <style lang="scss" scoped>
   // 引入你的背景图片，如果你的图片路径不一样，请修改这里
-  $bg-image-url: '@/assets/images/login-bg.jpg';
-  // 如果你没有准备图片，可以使用下面这个临时的在线图片看看效果
-  // $bg-image-url: 'https://images.unsplash.com/photo-1497366811353-6870744d04b2?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1920&q=80';
+  $bg-image-url: '@/assets/images/login-background.png';
 
   .login-container {
     display: flex;
@@ -228,7 +226,7 @@
         left: 0;
         width: 100%;
         height: 100%;
-        background: rgba(0, 0, 0, 0.4);
+        background: rgba(0, 0, 0, 0.1);
       }
 
       .login-left-content {
@@ -236,6 +234,7 @@
         z-index: 1;
         text-align: left;
         padding: 0 80px;
+        margin-left: 25%;
 
         .brand-title {
           font-size: 48px;
