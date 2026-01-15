@@ -220,6 +220,9 @@
         </el-row>
 
         <div class="section-title" style="margin-top: 25px">详细介绍</div>
+        <el-form-item label="储存醒粉" prop="storageContent">
+          <editor v-model="form.storageContent" :min-height="192" />
+        </el-form-item>
 
         <el-form-item label="使用攻略" prop="usageContent">
           <editor v-model="form.usageContent" :min-height="192" />
@@ -403,7 +406,8 @@
       reportFile: null,
       usageContent: null,
       companyContent: null,
-      qualityJson: null
+      qualityJson: null,
+      storageContent: null
     }
     proxy.resetForm('productRef')
   }

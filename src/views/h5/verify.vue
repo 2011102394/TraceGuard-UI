@@ -1,192 +1,318 @@
 <template>
   <div class="h5-container">
-    <div v-if="loading" class="loading-box">
-      <el-icon class="is-loading" :size="40"><Loading /></el-icon>
-      <p>正品溯源中...</p>
+    <div class="banner-box">
+      <div class="banner-content">
+        <div class="brand-row">
+          <div class="logo-wrapper">
+            <img
+              v-if="result.product && result.product.companyLogo"
+              :src="getFullUrl(result.product.companyLogo)"
+              class="app-logo"
+              alt="logo"
+            />
+            <img
+              v-else
+              src="@/assets/logo/logo.png"
+              class="app-logo"
+              alt="logo"
+            />
+          </div>
+          <div class="banner-text-col">
+            <div class="banner-title">防伪溯源查询中心</div>
+            <div class="banner-sub">正品保障 · 全程溯源</div>
+          </div>
+        </div>
+      </div>
+      <div class="banner-curve"></div>
     </div>
 
-    <div v-else-if="result.product" class="content-wrapper">
-      <div class="auth-header" :class="authStatusClass">
-        <img
-          v-if="result.product.companyLogo"
-          :src="getFullUrl(result.product.companyLogo)"
-          alt="Brand Logo"
-          class="corner-logo"
-        />
+    <div v-if="loading" class="loading-box">
+      <el-icon class="is-loading" :size="36" color="#3dbf6e"
+        ><Loading
+      /></el-icon>
+      <p>正品数据查询中...</p>
+    </div>
 
-        <div class="shield-icon">
-          <el-icon v-if="result.authStatus === 'SUCCESS'" :size="50"
-            ><CircleCheckFilled
-          /></el-icon>
-          <el-icon v-else :size="50"><WarningFilled /></el-icon>
+    <div v-else-if="result.product">
+      <div class="section-card verify-card">
+        <div class="verify-header">
+          <el-icon color="#07c160" :size="24"><SuccessFilled /></el-icon>
+          <span class="verify-title">正品认证通过</span>
         </div>
-
-        <div class="auth-text">
-          <h2>{{ statusTitle }}</h2>
-          <p class="scan-info">
-            第 <b>{{ result.scanCount || 1 }}</b> 次查询
+        <div class="verify-content">
+          <p class="main-msg">
+            尊敬的客户您好,您查询的产品是由
+            <b>{{ result.product.companyInfo }}</b> 生产的
+            <b>{{ result.product.productName }}</b
+            >,产品编码为<b>{{ result.code }}</b
+            >, 经系统核验为正牌产品,请放心使用。
           </p>
-
-          <p class="scan-time" v-if="result.firstScanTime || result.scanTime">
-            首次查询时间:
-            {{ formatTime(result.firstScanTime || result.scanTime) }}
-          </p>
-
-          <p class="scan-addr" v-if="!result.isFirst && result.firstScanLoc">
-            首次查询地点: {{ result.firstScanLoc }}
-          </p>
-        </div>
-
-        <div class="wave"></div>
-      </div>
-
-      <div class="section-card product-basic">
-        <div class="prod-img">
-          <el-image
-            :src="getFullUrl(result.product.productImage)"
-            :preview-src-list="[getFullUrl(result.product.productImage)]"
-            fit="cover"
-            class="full-img"
-          >
-            <template #error>
-              <div class="image-slot">
-                <el-icon><Picture /></el-icon>
-              </div>
-            </template>
-          </el-image>
-        </div>
-
-        <div class="prod-info">
-          <h3>{{ result.product.productName }}</h3>
-          <p>批次号：{{ result.batchNo }}</p>
-          <p>规格：{{ result.product.spec || '标准规格' }}</p>
-          <div class="verified-tag">
-            <el-icon><SuccessFilled /></el-icon> 官方正品认证
+          <div class="divider"></div>
+          <div class="detail-list">
+            <div class="d-item">
+              <span class="label">查询次数：</span>
+              <span class="value highlight"
+                >{{ result.scanCount || 1 }} 次</span
+              >
+            </div>
+            <div class="d-item">
+              <span class="label">首次查询：</span>
+              <span class="value">{{
+                result.firstScanTime
+                  ? formatTime(result.firstScanTime)
+                  : formatTime(result.scanTime)
+              }}</span>
+            </div>
+            <div class="d-item">
+              <span class="label">查询位置：</span>
+              <span class="value">{{
+                result.firstScanLoc || '位置信息未授权'
+              }}</span>
+            </div>
           </div>
         </div>
       </div>
 
-      <div class="tab-section">
-        <el-tabs v-model="activeTab" class="custom-tabs" stretch>
-          <el-tab-pane label="品质档案" name="quality">
-            <div class="tab-content">
-              <div class="quality-grid" v-if="qualityParams.length > 0">
-                <div
-                  class="q-item"
-                  v-for="(item, index) in qualityParams"
-                  :key="index"
-                >
-                  <span class="q-val">{{ item.value }}</span>
-                  <span class="q-label">{{ item.label }}</span>
-                </div>
-              </div>
+      <div class="section-card">
+        <div class="card-header"><span class="bar"></span>产品详情</div>
 
-              <div
-                class="report-box"
-                v-if="result.product.reportImage || result.product.reportFile"
+        <div class="product-detail-flex">
+          <div class="left-img-box">
+            <el-image
+              :src="getFullUrl(result.product.productImage)"
+              fit="contain"
+              class="detail-img"
+              :preview-src-list="[getFullUrl(result.product.productImage)]"
+              :initial-index="0"
+              preview-teleported
+              hide-on-click-modal
+            >
+              <template #error>
+                <div class="img-error-slot">
+                  <el-icon><Picture /></el-icon>
+                </div>
+              </template>
+            </el-image>
+          </div>
+
+          <div class="right-info-box">
+            <div class="info-row title-row">
+              <span class="p-label">产品名称：</span>
+              <span class="p-value title">{{
+                result.product.productName
+              }}</span>
+            </div>
+
+            <div
+              class="info-row"
+              v-for="(item, index) in qualityParams"
+              :key="index"
+            >
+              <span class="p-label">{{ item.label }}：</span>
+              <span class="p-value">{{ item.value }}</span>
+            </div>
+
+            <div
+              v-if="!qualityParams || qualityParams.length === 0"
+              class="no-param-tip"
+            >
+              暂无更多参数
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <div class="card-header"><span class="bar"></span>溯源服务</div>
+        <div class="grid-menu">
+          <div class="grid-item" @click="openModule('code')">
+            <div class="icon-circle">
+              <el-icon><Goods /></el-icon>
+            </div>
+            <span>一瓶一码</span>
+          </div>
+          <div class="grid-item" @click="openModule('guide')">
+            <div class="icon-circle">
+              <el-icon><Reading /></el-icon>
+            </div>
+            <span>使用说明</span>
+          </div>
+          <div class="grid-item" @click="openModule('report')">
+            <div class="icon-circle">
+              <el-icon><DocumentChecked /></el-icon>
+            </div>
+            <span>检测报告</span>
+          </div>
+          <div class="grid-item" @click="openModule('storage')">
+            <div class="icon-circle">
+              <el-icon><Refrigerator /></el-icon>
+            </div>
+            <span>储存醒粉</span>
+          </div>
+          <div class="grid-item" @click="openModule('company')">
+            <div class="icon-circle">
+              <el-icon><OfficeBuilding /></el-icon>
+            </div>
+            <span>公司介绍</span>
+          </div>
+          <div class="grid-item" @click="openModule('contact')">
+            <div class="icon-circle">
+              <el-icon><Phone /></el-icon>
+            </div>
+            <span>联系我们</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-area">
+        <p>中煤航测遥感集团有限公司提供防伪溯源技术支持</p>
+      </div>
+    </div>
+
+    <div v-else class="error-wrapper">
+      <el-icon :size="48" color="#ccc"><WarningFilled /></el-icon>
+      <p>暂未查询到相关产品信息</p>
+    </div>
+
+    <el-drawer
+      v-model="drawer.visible"
+      :title="drawer.title"
+      direction="btt"
+      size="80%"
+      :lock-scroll="true"
+      destroy-on-close
+      class="custom-drawer"
+    >
+      <div class="drawer-body">
+        <div v-if="drawer.type === 'code'" class="code-detail">
+          <div class="code-card">
+            <div class="label">防伪身份码</div>
+            <div class="code-val">{{ result.code || '未获取到编码' }}</div>
+          </div>
+          <el-descriptions :column="1" border class="mt-20">
+            <el-descriptions-item label="产品名称">{{
+              result.product.productName
+            }}</el-descriptions-item>
+            <el-descriptions-item label="生产批次">{{
+              result.batchNo || '见包装喷码'
+            }}</el-descriptions-item>
+
+            <el-descriptions-item
+              v-for="(item, index) in qualityParams"
+              :key="index"
+              :label="item.label"
+            >
+              {{ item.value }}
+            </el-descriptions-item>
+
+            <!-- <el-descriptions-item label="当前状态">
+              <el-tag type="success">已激活</el-tag>
+            </el-descriptions-item> -->
+          </el-descriptions>
+        </div>
+
+        <div v-if="drawer.type === 'storage'">
+          <div
+            class="rich-text-box"
+            v-if="result.product.storageContent"
+            v-html="formatRichText(result.product.storageContent)"
+          ></div>
+          <div v-else class="empty-tip">
+            <el-empty description="暂无储存说明" :image-size="80"></el-empty>
+          </div>
+        </div>
+
+        <div v-if="drawer.type === 'report'" class="report-detail">
+          <el-image
+            v-if="result.product.reportImage"
+            :src="getFullUrl(result.product.reportImage)"
+            :preview-src-list="[getFullUrl(result.product.reportImage)]"
+            preview-teleported
+            hide-on-click-modal
+            style="width: 100%; border-radius: 4px; border: 1px solid #eee"
+          />
+          <div
+            v-if="result.product.reportFile"
+            style="margin-top: 20px; text-align: center"
+          >
+            <a
+              :href="getFullUrl(result.product.reportFile)"
+              target="_blank"
+              class="download-link"
+            >
+              <el-button type="primary" icon="Download" round
+                >下载完整PDF报告</el-button
               >
-                <div class="section-title">官方检测报告</div>
-                <el-image
-                  v-if="result.product.reportImage"
-                  :src="getFullUrl(result.product.reportImage)"
-                  :preview-src-list="[getFullUrl(result.product.reportImage)]"
-                  fit="cover"
-                  class="report-img"
-                >
-                  <template #error
-                    ><div class="image-slot">暂无预览图</div></template
-                  >
-                </el-image>
+            </a>
+          </div>
+          <el-empty
+            v-if="!result.product.reportImage && !result.product.reportFile"
+            description="暂无检测报告"
+          />
+        </div>
 
-                <div class="pdf-download" v-if="result.product.reportFile">
-                  <a
-                    :href="getFullUrl(result.product.reportFile)"
-                    target="_blank"
-                    class="download-btn"
-                  >
-                    <el-icon style="margin-right: 5px"><Document /></el-icon>
-                    查看/下载完整PDF报告
-                  </a>
+        <div v-if="drawer.type === 'contact'" class="contact-detail">
+          <div class="business-card">
+            <div class="biz-header">
+              <img
+                v-if="result.product.companyLogo"
+                :src="getFullUrl(result.product.companyLogo)"
+                class="biz-logo"
+              />
+              <h3>{{ result.product.companyInfo }}</h3>
+            </div>
+            <div class="biz-body">
+              <div class="biz-row">
+                <div class="icon">
+                  <el-icon><Location /></el-icon>
+                </div>
+                <div class="info">
+                  <div class="label">公司地址</div>
+                  <div class="val">
+                    {{ result.product.address || '暂无地址信息' }}
+                  </div>
                 </div>
               </div>
-              <div v-else class="empty-tip">暂无检测报告</div>
+              <div class="biz-row" @click="callPhone(result.product.contactUs)">
+                <div class="icon">
+                  <el-icon><PhoneFilled /></el-icon>
+                </div>
+                <div class="info">
+                  <div class="label">服务热线</div>
+                  <div class="val link">
+                    {{ result.product.contactUs || '暂无联系方式' }}
+                  </div>
+                </div>
+                <el-icon class="arrow"><ArrowRight /></el-icon>
+              </div>
             </div>
-          </el-tab-pane>
-
-          <el-tab-pane label="使用攻略" name="guide">
-            <div class="tab-content">
-              <div
-                class="rich-text"
-                v-if="result.product.usageContent"
-                v-html="formatRichText(result.product.usageContent)"
-              ></div>
-              <div v-else class="empty-tip">暂无使用攻略</div>
-            </div>
-          </el-tab-pane>
-
-          <el-tab-pane label="公司简介" name="company">
-            <div class="tab-content">
-              <div
-                class="rich-text"
-                v-if="result.product.companyContent"
-                v-html="formatRichText(result.product.companyContent)"
-              ></div>
-              <div v-else class="empty-tip">暂无企业简介</div>
-            </div>
-          </el-tab-pane>
-        </el-tabs>
-      </div>
-
-      <div class="footer-section">
-        <div class="company-name">
-          {{ result.product.companyInfo || '陕西齐峰美农农业科技有限公司' }}
+          </div>
         </div>
-        <div class="footer-divider"></div>
-        <div class="contact-info">
-          <p>
-            <el-icon style="margin-right: 5px"><LocationInformation /></el-icon>
-            地址：{{ result.product.address || '陕西眉县国家级猕猴桃产业园区' }}
-          </p>
-          <p>
-            <el-icon style="margin-right: 5px"><Phone /></el-icon> 电话：{{
-              result.product.contactUs || '0917-5665658'
-            }}
-          </p>
+
+        <div v-if="['guide', 'company'].includes(drawer.type)">
+          <div class="rich-text-box" v-html="drawer.content"></div>
         </div>
       </div>
-    </div>
-
-    <div v-else class="loading-box">
-      <el-icon :size="50" color="#f56c6c"><CircleCloseFilled /></el-icon>
-      <p style="margin-top: 20px; color: #666">未查询到相关产品信息</p>
-      <p style="font-size: 12px; color: #999">
-        请确认二维码是否正确或联系管理员
-      </p>
-    </div>
+    </el-drawer>
   </div>
 </template>
 
 <script setup>
-  import { onMounted, ref, computed } from 'vue'
+  import { onMounted, ref, reactive } from 'vue'
   import { useRoute } from 'vue-router'
   import request from '@/utils/request'
 
   const route = useRoute()
   const loading = ref(true)
   const result = ref({})
-  const activeTab = ref('quality')
   const qualityParams = ref([])
-
   const baseUrl = import.meta.env.VITE_APP_BASE_API
 
-  const authStatusClass = computed(() => {
-    if (result.value.authStatus === 'SUCCESS') return 'bg-success'
-    return 'bg-warning'
-  })
-
-  const statusTitle = computed(() => {
-    if (result.value.authStatus === 'SUCCESS') return '正品认证 · 放心使用'
-    return '警告 · 防伪码异常'
+  const drawer = reactive({
+    visible: false,
+    title: '',
+    type: '',
+    content: ''
   })
 
   onMounted(() => {
@@ -205,7 +331,6 @@
       params: { code: codeVal }
     })
       .then(res => {
-        console.log('Verify Response:', res)
         loading.value = false
         if (res.code === 200) {
           result.value = res.data
@@ -221,6 +346,35 @@
       .catch(() => {
         loading.value = false
       })
+  }
+
+  function openModule(type) {
+    drawer.type = type
+    drawer.visible = true
+    const p = result.value.product || {}
+
+    const titles = {
+      code: '一瓶一码信息',
+      guide: '使用说明',
+      report: '权威检测报告',
+      storage: '储存与醒粉攻略',
+      company: '企业介绍',
+      contact: '联系我们'
+    }
+    drawer.title = titles[type]
+
+    if (type === 'guide')
+      drawer.content =
+        formatRichText(p.usageContent) ||
+        '<p style="text-align:center;color:#999;padding:20px">暂无说明</p>'
+    if (type === 'company')
+      drawer.content =
+        formatRichText(p.companyContent) ||
+        '<p style="text-align:center;color:#999;padding:20px">暂无介绍</p>'
+  }
+
+  function callPhone(num) {
+    if (num) window.location.href = 'tel:' + num
   }
 
   function formatTime(timeStr) {
@@ -251,312 +405,426 @@
 <style scoped lang="scss">
   .h5-container {
     min-height: 100vh;
-    background-color: #f8f9fa;
-    display: flex;
-    flex-direction: column;
+    background-color: #f2f3f5;
+    padding-bottom: 40px;
+    font-family:
+      'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB',
+      'Microsoft YaHei', Arial, sans-serif;
   }
 
-  .content-wrapper {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .loading-box {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 60vh;
-    color: #909399;
-    p {
-      margin-top: 15px;
-      font-size: 14px;
-    }
-  }
-
-  /* 顶部真伪核验卡片 */
-  .auth-header {
+  /* Banner 样式 */
+  .banner-box {
+    height: 140px;
+    background: linear-gradient(135deg, #1f9e56 0%, #4cc77b 100%);
     position: relative;
-    padding: 40px 25px 70px;
-    color: #fff;
-    border-bottom-left-radius: 30px;
-    border-bottom-right-radius: 30px;
-    display: flex;
-    align-items: center;
-    overflow: hidden;
+    border-radius: 0 0 30px 30px;
 
-    &.bg-success {
-      background: linear-gradient(135deg, #07c160, #10ad7c);
-    }
-    &.bg-warning {
-      background: linear-gradient(135deg, #ff976a, #ff4d4f);
-    }
+    .banner-content {
+      padding: 20px 20px 0 20px;
 
-    .corner-logo {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      height: 48px;
-      width: auto;
-      object-fit: contain;
-      z-index: 10;
-      opacity: 0.95;
-      border-radius: 4px;
-    }
+      .brand-row {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        padding-left: 20px;
+        .logo-wrapper {
+          width: 64px;
+          height: 64px;
+          background: #fff;
+          border-radius: 12px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin-right: 20px;
+          box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 
-    .auth-text {
-      margin-left: 15px;
-      z-index: 2;
-    }
-    h2 {
-      margin: 0 0 5px;
-      font-size: 22px;
-      font-weight: bold;
-    }
-    p {
-      margin: 2px 0;
-      font-size: 13px;
-      opacity: 0.95;
-    }
+          .app-logo {
+            width: 56px;
+            height: 56px;
+            object-fit: contain;
+          }
+        }
 
-    .scan-time {
-      font-size: 12px;
-      margin-top: 3px;
-      opacity: 0.9;
-    }
-    /* [新增样式] 地点文字 */
-    .scan-addr {
-      display: flex;
-      align-items: center;
-      font-size: 12px;
-      margin-top: 3px;
-      opacity: 0.9;
-      .el-icon {
-        margin-right: 3px;
+        .banner-text-col {
+          color: #fff;
+          .banner-title {
+            font-size: 20px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+          }
+          .banner-sub {
+            font-size: 12px;
+            opacity: 0.8;
+            font-weight: 300;
+          }
+        }
       }
     }
 
-    .shield-icon {
-      z-index: 2;
+    .banner-curve {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 40px;
+      border-radius: 0 0 40px 40px;
     }
   }
 
-  .wave {
-    position: absolute;
-    bottom: -10px;
-    left: 0;
-    width: 100%;
-    height: 50px;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 50% 50% 0 0;
-    transform: scaleX(1.5);
-  }
-
+  /* 通用卡片容器 */
   .section-card {
     background: #fff;
+    margin: 0 16px 16px;
     border-radius: 12px;
-    margin: -40px 15px 15px;
-    padding: 15px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    padding: 20px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03);
     position: relative;
-    z-index: 5;
   }
 
-  .product-basic {
+  .card-header {
+    font-size: 16px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 15px;
     display: flex;
     align-items: center;
-    .prod-img {
-      width: 90px;
-      height: 90px;
-      border-radius: 8px;
-      background: #f0f0f0;
-      margin-right: 15px;
-      overflow: hidden;
-      .full-img {
-        width: 100%;
-        height: 100%;
-      }
-      .image-slot {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100%;
-        color: #999;
-        font-size: 20px;
+    .bar {
+      width: 4px;
+      height: 16px;
+      background: #1f9e56;
+      margin-right: 10px;
+      border-radius: 2px;
+    }
+  }
+
+  /* 验证卡片 */
+  .verify-card {
+    margin-top: -30px;
+
+    .verify-header {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 15px;
+      .verify-title {
+        font-size: 18px;
+        font-weight: bold;
+        color: #07c160;
+        margin-left: 8px;
       }
     }
-    .prod-info {
-      h3 {
-        margin: 0 0 8px;
-        font-size: 17px;
+
+    .verify-content {
+      .main-msg {
+        font-size: 14px;
         color: #333;
-        font-weight: bold;
+        line-height: 1.6;
+        text-align: justify;
+        b {
+          color: #1f9e56;
+          font-weight: 600;
+        }
       }
-      p {
-        margin: 4px 0;
-        font-size: 13px;
-        color: #666;
+
+      .divider {
+        height: 1px;
+        background: #f0f0f0;
+        margin: 15px 0;
       }
-      .verified-tag {
-        color: #07c160;
-        font-weight: bold;
-        font-size: 12px;
-        margin-top: 8px;
-        display: flex;
-        align-items: center;
-        .el-icon {
-          margin-right: 2px;
+
+      .detail-list {
+        .d-item {
+          display: flex;
+          justify-content: space-between;
+          margin-bottom: 8px;
+          font-size: 13px;
+
+          .label {
+            color: #888;
+          }
+          .value {
+            color: #333;
+            font-family: 'Arial', sans-serif;
+          }
+          .highlight {
+            color: #ff6b00;
+            font-weight: bold;
+            font-size: 15px;
+          }
         }
       }
     }
   }
 
-  .tab-section {
-    background: #fff;
-    margin: 0 15px;
-    border-radius: 12px;
-    min-height: 300px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
-
-    :deep(.el-tabs__header) {
-      margin-bottom: 0;
-    }
-    :deep(.el-tabs__nav-wrap::after) {
-      height: 1px;
-      background-color: #f0f0f0;
-    }
-    .tab-content {
-      padding: 20px;
-    }
-  }
-
-  .quality-grid {
+  /* --- 产品详情 (左右布局优化) --- */
+  .product-detail-flex {
     display: flex;
-    justify-content: space-around;
-    margin-bottom: 20px;
-    background: #f9fcff;
-    padding: 15px 0;
+    align-items: stretch;
+    gap: 15px;
+    min-height: 140px;
+  }
+
+  /* 左侧图片容器 */
+  .left-img-box {
+    width: 110px;
+    flex-shrink: 0;
+    background-color: #f8f8f8;
     border-radius: 8px;
-    border: 1px solid #eef5fe;
+    border: 1px solid #f0f0f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
 
-    .q-item {
-      text-align: center;
-      .q-val {
-        display: block;
-        font-size: 18px;
-        font-weight: bold;
-        color: #409eff;
-      }
-      .q-label {
-        font-size: 12px;
-        color: #999;
-        margin-top: 5px;
-      }
-    }
-  }
-
-  .report-box {
-    text-align: center;
-    margin-top: 25px;
-    .section-title {
-      font-weight: bold;
-      margin-bottom: 15px;
-      position: relative;
-      display: inline-block;
-      font-size: 15px;
-      &::after {
-        content: '';
-        display: block;
-        width: 30px;
-        height: 3px;
-        background: #409eff;
-        margin: 5px auto 0;
-        border-radius: 2px;
-      }
-    }
-    .report-img {
+    .detail-img {
       width: 100%;
-      border-radius: 6px;
-      border: 1px solid #eee;
-      margin-bottom: 15px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      height: 100%;
+      object-fit: contain;
     }
-  }
 
-  .pdf-download {
-    margin-top: 15px;
-    .download-btn {
+    .img-error-slot {
+      font-size: 24px;
+      color: #ccc;
       display: flex;
-      align-items: center;
       justify-content: center;
-      width: 80%;
-      margin: 0 auto;
-      padding: 10px 0;
-      background: #f2f6fc;
-      color: #409eff;
-      text-decoration: none;
-      border-radius: 25px;
-      font-size: 14px;
-      font-weight: 500;
-      border: 1px solid #d9ecff;
-      &:active {
-        background: #ecf5ff;
+      align-items: center;
+      height: 100%;
+      width: 100%;
+    }
+  }
+
+  /* 右侧信息容器 */
+  .right-info-box {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 5px 0;
+
+    .info-row {
+      display: flex;
+      margin-bottom: 8px;
+      line-height: 1.5;
+      font-size: 13px;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+
+      /* 关键：修复对齐问题的 CSS */
+      .p-label {
+        color: #888;
+        width: 72px; /* 设置固定宽度，确保标签等宽 */
+        flex-shrink: 0;
+        text-align: justify;
+        text-align-last: justify; /* 强制两端对齐 */
+        margin-right: 5px; /* 冒号前的间隙或冒号后的间隙 */
+        font-weight: 400;
+      }
+
+      .p-value {
+        color: #333;
+        flex: 1;
+        font-weight: 500;
+
+        &.title {
+          font-size: 15px;
+          font-weight: bold;
+          color: #000;
+        }
+
+        &.code-text {
+          font-family: 'Consolas', Monaco, monospace;
+          color: #e6a23c;
+          word-break: break-all;
+          font-weight: bold;
+        }
       }
     }
-  }
 
-  .rich-text {
-    font-size: 14px;
-    line-height: 1.8;
-    color: #333;
-    overflow-x: hidden;
-    :deep(img) {
-      max-width: 100% !important;
-      height: auto !important;
-      border-radius: 4px;
-      margin: 10px 0;
-    }
-    :deep(p) {
-      margin-bottom: 10px;
+    .no-param-tip {
+      font-size: 12px;
+      color: #ccc;
+      margin-top: 5px;
     }
   }
 
-  .empty-tip {
-    text-align: center;
-    color: #ccc;
-    padding: 40px 0;
-    font-size: 13px;
-  }
+  /* 六宫格菜单 */
+  .grid-menu {
+    display: flex;
+    flex-wrap: wrap;
+    margin: 0 -5px;
 
-  .footer-section {
-    background-color: #70b62c;
-    color: #ffffff;
-    padding: 30px 20px;
-    margin-top: auto;
-    text-align: left;
+    .grid-item {
+      width: 33.33%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 15px 5px;
+      cursor: pointer;
 
-    .company-name {
-      font-size: 18px;
-      font-weight: bold;
-      letter-spacing: 1px;
-      margin-bottom: 15px;
-    }
-    .footer-divider {
-      width: 100%;
-      height: 1px;
-      background-color: rgba(255, 255, 255, 0.4);
-      margin-bottom: 15px;
-    }
-    .contact-info {
-      p {
-        margin: 8px 0;
-        font-size: 14px;
-        line-height: 1.4;
+      .icon-circle {
+        width: 48px;
+        height: 48px;
+        border-radius: 16px;
+        background: #f0f9f4;
         display: flex;
         align-items: center;
-        opacity: 0.95;
+        justify-content: center;
+        margin-bottom: 8px;
+        color: #1f9e56;
+        font-size: 24px;
+        transition: all 0.2s;
+      }
+      span {
+        font-size: 12px;
+        color: #666;
+      }
+      &:active .icon-circle {
+        background: #dcf5e3;
+        transform: scale(0.95);
       }
     }
+  }
+
+  /* 抽屉 & 弹窗内容 */
+  .drawer-body {
+    padding: 10px 20px 40px;
+  }
+
+  .code-card {
+    background: linear-gradient(135deg, #1f9e56, #4cc77b);
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+    color: #fff;
+    margin-bottom: 20px;
+
+    .label {
+      font-size: 14px;
+      opacity: 0.9;
+      margin-bottom: 10px;
+    }
+    .code-val {
+      font-size: 16px;
+      font-weight: bold;
+      letter-spacing: 1px;
+      word-break: break-all;
+      line-height: 1.4;
+    }
+  }
+
+  .business-card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+    overflow: hidden;
+
+    .biz-header {
+      background: #f9fcfb;
+      padding: 20px;
+      text-align: center;
+      border-bottom: 1px solid #f0f0f0;
+
+      .biz-logo {
+        width: 60px;
+        height: 60px;
+        border-radius: 8px;
+        margin-bottom: 10px;
+      }
+      h3 {
+        margin: 0;
+        font-size: 16px;
+        color: #333;
+      }
+    }
+
+    .biz-body {
+      padding: 10px 20px;
+      .biz-row {
+        display: flex;
+        align-items: center;
+        padding: 15px 0;
+        border-bottom: 1px solid #f9f9f9;
+
+        &:last-child {
+          border-bottom: none;
+        }
+
+        .icon {
+          width: 36px;
+          height: 36px;
+          background: #e1f5ea;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #1f9e56;
+          margin-right: 15px;
+        }
+        .info {
+          flex: 1;
+          .label {
+            font-size: 12px;
+            color: #999;
+            margin-bottom: 4px;
+          }
+          .val {
+            font-size: 14px;
+            color: #333;
+            font-weight: 500;
+          }
+          .val.link {
+            color: #1f9e56;
+          }
+        }
+        .arrow {
+          color: #ccc;
+        }
+      }
+    }
+  }
+
+  .rich-text-box {
+    line-height: 1.8;
+    color: #444;
+    font-size: 14px;
+    :deep(img) {
+      max-width: 100%;
+      height: auto;
+      border-radius: 4px;
+      display: block;
+      margin: 10px auto;
+    }
+  }
+
+  .footer-area {
+    text-align: center;
+    font-size: 11px;
+    color: #ccc;
+    margin-top: 30px;
+  }
+  .mt-20 {
+    margin-top: 20px;
+  }
+
+  /* 加载和错误提示 */
+  .loading-box,
+  .error-wrapper {
+    padding-top: 100px;
+    text-align: center;
+    color: #999;
+    p {
+      margin-top: 15px;
+      font-size: 14px;
+    }
+  }
+</style>
+
+<style lang="scss">
+  /* 全局覆盖：强制将 Element Plus 图片预览层的 z-index 设为最高 */
+  .el-image-viewer__wrapper {
+    z-index: 20000 !important;
   }
 </style>
