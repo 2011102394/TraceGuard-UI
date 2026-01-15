@@ -163,6 +163,7 @@
   import * as echarts from 'echarts'
   import axios from 'axios'
   import request from '@/utils/request'
+  import provinceJson from '@/assets/data/province.json'
   import {
     Box,
     Ticket,
@@ -323,97 +324,86 @@
     if (!mapChartRef.value) return
     mapLoading.value = true
 
-    const chinaJsonUrl =
-      'https://geo.datav.aliyun.com/areas_v3/bound/100000_full.json'
+    mapLoading.value = false
+    echarts.registerMap('china', provinceJson)
 
-    axios
-      .get(chinaJsonUrl)
-      .then(response => {
-        mapLoading.value = false
-        echarts.registerMap('china', response.data)
+    mapChart = echarts.init(mapChartRef.value)
 
-        mapChart = echarts.init(mapChartRef.value)
+    // [核心修改 3] 处理数据，将简称转换为全称
+    const processedData = (data.value.provinceStat || []).map(item => ({
+      name: normalizeProvinceName(item.name),
+      value: item.value
+    }))
 
-        // [核心修改 3] 处理数据，将简称转换为全称
-        const processedData = (data.value.provinceStat || []).map(item => ({
-          name: normalizeProvinceName(item.name),
-          value: item.value
-        }))
+    mapChart.setOption({
+      tooltip: {
+        trigger: 'item',
+        formatter: function (params) {
+          const val = params.value ? params.value : 0
+          return `${params.name}<br/>扫码量：<span style="font-weight:bold; color:#409eff">${val}</span>`
+        },
+        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+        textStyle: { color: '#333' }
+      },
+      visualMap: {
+        min: 0,
+        max: calculateMax(processedData), // 使用处理后的数据计算最大值
+        left: '20',
+        bottom: '20',
+        text: ['高', '低'],
+        calculable: true,
+        inRange: {
+          color: ['#e0f7fa', '#80deea', '#0097a7']
+        },
+        textStyle: { color: '#666' }
+      },
+      series: [
+        {
+          name: '扫码分布',
+          type: 'map',
+          map: 'china',
+          roam: true,
+          zoom: 1.2,
+          layoutCenter: ['50%', '57%'],
+          layoutSize: '95%',
 
-        mapChart.setOption({
-          tooltip: {
-            trigger: 'item',
-            formatter: function (params) {
-              const val = params.value ? params.value : 0
-              return `${params.name}<br/>扫码量：<span style="font-weight:bold; color:#409eff">${val}</span>`
-            },
-            backgroundColor: 'rgba(255, 255, 255, 0.95)',
-            textStyle: { color: '#333' }
+          labelLayout: {
+            hideOverlap: true
           },
-          visualMap: {
-            min: 0,
-            max: calculateMax(processedData), // 使用处理后的数据计算最大值
-            left: '20',
-            bottom: '20',
-            text: ['高', '低'],
-            calculable: true,
-            inRange: {
-              color: ['#e0f7fa', '#80deea', '#0097a7']
-            },
-            textStyle: { color: '#666' }
+
+          label: {
+            show: true,
+            fontSize: 10,
+            color: '#606266',
+            textShadowColor: '#fff',
+            textShadowBlur: 2,
+            textShadowOffsetX: 0,
+            textShadowOffsetY: 0
           },
-          series: [
-            {
-              name: '扫码分布',
-              type: 'map',
-              map: 'china',
-              roam: true,
-              zoom: 1.2,
-              layoutCenter: ['50%', '57%'],
-              layoutSize: '95%',
 
-              labelLayout: {
-                hideOverlap: true
-              },
-
-              label: {
-                show: true,
-                fontSize: 10,
-                color: '#606266',
-                textShadowColor: '#fff',
-                textShadowBlur: 2,
-                textShadowOffsetX: 0,
-                textShadowOffsetY: 0
-              },
-
-              emphasis: {
-                label: {
-                  show: false
-                },
-                itemStyle: {
-                  areaColor: 'rgba(64, 158, 255, 0.4)',
-                  shadowBlur: 10,
-                  shadowColor: 'rgba(0,0,0,0.1)'
-                }
-              },
-
-              itemStyle: {
-                borderColor: '#ffffff',
-                borderWidth: 1.2,
-                areaColor: '#eff4f9',
-                shadowColor: 'rgba(0, 0, 0, 0.05)',
-                shadowBlur: 4
-              },
-              // [核心修改 4] 使用处理后的全名数据
-              data: processedData
+          emphasis: {
+            label: {
+              show: false
+            },
+            itemStyle: {
+              areaColor: 'rgba(64, 158, 255, 0.4)',
+              shadowBlur: 10,
+              shadowColor: 'rgba(0,0,0,0.1)'
             }
-          ]
-        })
-      })
-      .catch(error => {
-        mapLoading.value = false
-        console.error('地图加载失败', error)
-      })
+          },
+
+          itemStyle: {
+            borderColor: '#ffffff',
+            borderWidth: 1.2,
+            areaColor: '#eff4f9',
+            shadowColor: 'rgba(0, 0, 0, 0.05)',
+            shadowBlur: 4
+          },
+          // [核心修改 4] 使用处理后的全名数据
+          data: processedData
+        }
+      ]
+    })
   }
 
   function calculateMax(dataList) {

@@ -205,6 +205,7 @@
       params: { code: codeVal }
     })
       .then(res => {
+        console.log('Verify Response:', res)
         loading.value = false
         if (res.code === 200) {
           result.value = res.data

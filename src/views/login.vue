@@ -93,6 +93,7 @@
               type="primary"
               class="login-btn"
               @click.prevent="handleLogin"
+              style="width: 100%"
             >
               <span v-if="!loading">立即登录</span>
               <span v-else>登 录 中...</span>
