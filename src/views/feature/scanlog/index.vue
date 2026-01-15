@@ -93,7 +93,7 @@
         label="扫描IP"
         align="center"
         prop="scanIp"
-        width="130"
+        width="200"
       />
       <el-table-column
         label="地理位置"
