@@ -647,11 +647,11 @@
             genLoading.value = false
             getBatchList()
             // 可以加一个提示让用户知道会有延迟
-            proxy.$modal.notify(
-              '提示',
-              '若生成数量巨大，请过几分钟后刷新列表查看统计数据',
-              'info'
-            )
+            // proxy.$modal.notify(
+            //   '提示',
+            //   '若生成数量巨大，请过几分钟后刷新列表查看统计数据',
+            //   'info'
+            // )
           })
           .catch(() => {
             genLoading.value = false

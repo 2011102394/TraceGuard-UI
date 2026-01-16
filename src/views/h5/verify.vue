@@ -165,7 +165,9 @@
       </div>
 
       <div class="footer-area">
-        <p>中煤航测遥感集团有限公司提供防伪溯源技术支持</p>
+        <p>中煤航测遥感集团有限公司</p>
+        <p>陕西煤航安全印务有限公司</p>
+        <p>联系电话：029-89692365</p>
       </div>
     </div>
 
@@ -178,13 +180,21 @@
       v-model="drawer.visible"
       :title="drawer.title"
       direction="btt"
-      size="80%"
+      size="70%"
       :lock-scroll="true"
       destroy-on-close
       class="custom-drawer"
     >
       <div class="drawer-body">
         <div v-if="drawer.type === 'code'" class="code-detail">
+          <div class="biz-header">
+            <img
+              v-if="result.product.companyLogo"
+              :src="getFullUrl(result.product.companyLogo)"
+              class="biz-logo"
+            />
+            <h3>{{ result.product.companyInfo }}</h3>
+          </div>
           <div class="code-card">
             <div class="label">防伪身份码</div>
             <div class="code-val">{{ result.code || '未获取到编码' }}</div>
@@ -212,6 +222,14 @@
         </div>
 
         <div v-if="drawer.type === 'storage'">
+          <div class="biz-header">
+            <img
+              v-if="result.product.companyLogo"
+              :src="getFullUrl(result.product.companyLogo)"
+              class="biz-logo"
+            />
+            <h3>{{ result.product.companyInfo }}</h3>
+          </div>
           <div
             class="rich-text-box"
             v-if="result.product.storageContent"
@@ -223,6 +241,14 @@
         </div>
 
         <div v-if="drawer.type === 'report'" class="report-detail">
+          <div class="biz-header">
+            <img
+              v-if="result.product.companyLogo"
+              :src="getFullUrl(result.product.companyLogo)"
+              class="biz-logo"
+            />
+            <h3>{{ result.product.companyInfo }}</h3>
+          </div>
           <el-image
             v-if="result.product.reportImage"
             :src="getFullUrl(result.product.reportImage)"
@@ -290,6 +316,14 @@
         </div>
 
         <div v-if="['guide', 'company'].includes(drawer.type)">
+          <div class="biz-header">
+            <img
+              v-if="result.product.companyLogo"
+              :src="getFullUrl(result.product.companyLogo)"
+              class="biz-logo"
+            />
+            <h3>{{ result.product.companyInfo }}</h3>
+          </div>
           <div class="rich-text-box" v-html="drawer.content"></div>
         </div>
       </div>
@@ -690,7 +724,7 @@
 
   /* 抽屉 & 弹窗内容 */
   .drawer-body {
-    padding: 10px 20px 40px;
+    padding: 0px 20px 40px 20px;
   }
 
   .code-card {
@@ -714,7 +748,24 @@
       line-height: 1.4;
     }
   }
+  .biz-header {
+    background: #f9fcfb;
+    padding: 0px 20px 20px 20px;
+    text-align: center;
+    // border-bottom: 1px solid #f0f0f0;
 
+    .biz-logo {
+      width: 60px;
+      height: 60px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+    }
+    h3 {
+      margin: 0;
+      font-size: 16px;
+      color: #333;
+    }
+  }
   .business-card {
     background: #fff;
     border-radius: 12px;
@@ -723,7 +774,7 @@
 
     .biz-header {
       background: #f9fcfb;
-      padding: 20px;
+      padding: 0px 20px 20px 20px;
       text-align: center;
       border-bottom: 1px solid #f0f0f0;
 
